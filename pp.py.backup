@@ -1,0 +1,101 @@
+from flask import Flask, render_template, request, send_file
+from flask import jsonify
+from pandas import read_csv
+import numpy as np
+from pandas import datetime
+from statsmodels.tsa.arima_model import ARIMA
+from werkzeug import secure_filename
+from flask import Flask
+
+app = Flask(__name__)
+
+# Helper function
+
+
+def parser(x):
+   return datetime.strptime('190'+x, '%Y-%m')
+
+
+############################################################
+
+# Index route
+@app.route('/')
+def index():
+   return render_template('index.html')
+
+
+############################################################
+
+# Upload sales document
+@app.route('/sales/upload13', methods=['POST'])
+def store():
+   if request.method == 'POST':
+      f = request.files['file']
+      file_name = f.filename
+      # f.save(secure_filename(file_name))
+      f.save(secure_filename(file_name))
+      return file_name
+
+############################################################
+
+# Upload sales document
+@app.route('/sales/upload', methods=['POST'])
+def store123():
+   if request.method == 'POST':
+      f = request.files['file']
+      file_name = f.filename    
+      f.save(secure_filename(file_name))
+      return send_file(file_name, attachment_filename=file_name)
+	
+
+############################################################
+
+# Forecast with no files uploaded
+@app.route('/sales/single', methods=['GET'])
+def forcast_single():
+   res = ''
+   try:
+      # get file uploaded
+      f = request.files['file']
+      file_name = f.filename    
+      f.save(secure_filename(file_name))
+      # get file 
+      df = read_csv('shampoo.csv', header=0, parse_dates=[0], index_col=0, squeeze=True, date_parser=parser)
+      data = df.values
+      history = [x for x in data]
+
+      model = ARIMA(history, order=(5, 1, 0))
+      model_fit = model.fit(disp=0)
+      output = model_fit.forecast()
+      yhat = output[0]
+      print('predicted=%f' % (yhat))
+      res = str(yhat)
+   except Exception as e:
+      print(e)
+   print(res)
+   return res
+
+############################################################
+
+# Forecast with no files uploaded
+@app.route('/sales/multi', methods=['GET'])
+def forcast_multi():
+      # get file uploaded
+      f = request.files['file']
+      file_name = f.filename    
+      f.save(secure_filename(file_name))
+      # get file 
+   for t in range(len(test)):
+      model = ARIMA(history, order=(5,1,0))
+      model_fit = model.fit(disp=0)
+      output = model_fit.forecast()
+      yhat = output[0]
+      predictions.append(yhat)
+      obs = test[t]
+      history.append(obs)
+      print('predicted=%f, expected=%f' % (yhat, obs))
+
+
+############################################################
+if __name__ == '__main__':
+   app.run()
